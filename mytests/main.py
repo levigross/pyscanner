@@ -1,7 +1,14 @@
 import urllib
 
+class MySuperClass(object):
+	def __init__(sellf):
+		pass
+		
+	def _do_something(self):
+		pass
+
 def func1():
-    pass
+    urllib.urlopen("foo.com")
 
 
 def func2():

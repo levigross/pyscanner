@@ -12,12 +12,12 @@ class Message(object):
         return '%s:%s: %s' % (self.filename, self.lineno, self.message % self.message_args)
 
 
-class MethodCalled(Message):
-    message = "Imports %r"
+class MethodCall(Message):
+    message = "Class %r has %r"
 
-    def __init__(self, filename, lineno, name):
+    def __init__(self, filename, lineno, name, class_name):
         Message.__init__(self, filename, lineno)
-        self.message_args = (name, )
+        self.message_args = (class_name, name, )
 
 
 class FileImports(Message):

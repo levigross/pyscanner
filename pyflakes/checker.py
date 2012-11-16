@@ -271,7 +271,7 @@ class Checker(object): #TODO: Fully for my own use!
         for scope in self.dead_scopes:
             for importation in scope.itervalues():
                 if isinstance(importation, Importation):
-                    self.report(messages.FileImports, importation.source.lineno, importation.fullName )
+                    self.report(messages.FileImports, importation.source.lineno, importation.fullName)
 
     def pushFunctionScope(self):
         self.scopeStack.append(FunctionScope())
@@ -280,7 +280,7 @@ class Checker(object): #TODO: Fully for my own use!
         self.scopeStack.append(ClassScope())
 
     def report(self, messageClass, *args, **kwargs):
-        if messageClass not in (messages.FunctionCall, messages.FileImports,):
+        if messageClass not in (messages.FunctionCall, messages.FileImports, messages.MethodCall):
             return
         self.messages.append(messageClass(self.filename, *args, **kwargs))
 
@@ -518,7 +518,10 @@ class Checker(object): #TODO: Fully for my own use!
             for deco in node.decorator_list:
                 self.handleNode(deco, node)
         value = FunctionDefinition(node.name, node)
-        self.report(messages.FunctionCall, node.lineno, value.name)
+        if isinstance(node.parent, _ast.ClassDef):
+            self.report(messages.MethodCall, node.lineno, value.name, node.parent.name)
+        else:
+            self.report(messages.FunctionCall, node.lineno, value.name)
         self.addBinding(node.lineno, FunctionDefinition(node.name, node), node.lineno)
         self.LAMBDA(node)
 
