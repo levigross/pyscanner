@@ -1,14 +1,14 @@
-import urllib
+import urllib as something_else
 
 class MySuperClass(object):
 	def __init__(sellf):
 		pass
-		
+
 	def _do_something(self):
 		pass
 
 def func1():
-    urllib.urlopen("foo.com")
+    something_else.urlopen("foo.com")
 
 
 def func2():
