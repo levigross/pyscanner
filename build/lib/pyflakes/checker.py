@@ -280,7 +280,7 @@ class Checker(object): #TODO: Fully for my own use!
         self.scopeStack.append(ClassScope())
 
     def report(self, messageClass, *args, **kwargs):
-        if messageClass not in (messages.FunctionCall, messages.FileImports, messages.MethodCall):
+        if messageClass not in (messages.FunctionCall, messages.FileImports, messages.MethodCall, messages.ClassDeclaration):
             return
         self.messages.append(messageClass(self.filename, *args, **kwargs))
 
@@ -590,6 +590,7 @@ class Checker(object): #TODO: Fully for my own use!
         for stmt in node.body:
             self.handleNode(stmt, node)
         self.popScope()
+        self.report(messages.ClassDeclaration, node.lineno, node.name)
         self.addBinding(node.lineno, Binding(node.name, node))
 
     def ASSIGN(self, node):

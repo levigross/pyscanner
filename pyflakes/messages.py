@@ -12,6 +12,14 @@ class Message(object):
         return '%s:%s: %s' % (self.filename, self.lineno, self.message % self.message_args)
 
 
+class ClassDeclaration(Message):
+    message = "Class %r declared"
+
+    def __init__(self, filename, lineno, name):
+        Message.__init__(self, filename, lineno)
+        self.message_args = (name, )
+
+
 class MethodCall(Message):
     message = "Class %r has %r"
 
