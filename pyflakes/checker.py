@@ -13,6 +13,7 @@ from pyflakes import messages
 # from Python 2.6's standard ast module
 try:
     import ast
+
     iter_child_nodes = ast.iter_child_nodes
 except (ImportError, AttributeError):
     def iter_child_nodes(node, astcls=_ast.AST):
@@ -60,7 +61,9 @@ class Binding(object):
 
 
 class UnBinding(Binding):
-    '''Created by the 'del' operator.'''
+    """
+    Created by the 'del' operator.
+    """
 
 
 class Importation(Binding):
@@ -197,18 +200,17 @@ class Checker(object): #TODO: Fully for my own use!
         del self.scopeStack[1:]
         self.popScope()
         self.check_dead_scopes()
-        self.list_imports()
 
 
     def deferFunction(self, callable):
-        '''
+        """
         Schedule a function handler to be called just before completion.
 
         This is used for handling function bodies, which must be deferred
         because code later in the file might modify the global scope. When
         `callable` is called, the scope at the time this is called will be
         restored, however it will contain any new bindings added to it.
-        '''
+        """
         self._deferredFunctions.append((callable, self.scopeStack[:]))
 
 
@@ -267,12 +269,6 @@ class Checker(object): #TODO: Fully for my own use!
                             importation.source.lineno,
                             importation.name)
 
-    def list_imports(self):
-        for scope in self.dead_scopes:
-            for importation in scope.itervalues():
-                if isinstance(importation, Importation):
-                    self.report(messages.FileImports, importation.source.lineno, importation.fullName)
-
     def pushFunctionScope(self):
         self.scopeStack.append(FunctionScope())
 
@@ -280,7 +276,7 @@ class Checker(object): #TODO: Fully for my own use!
         self.scopeStack.append(ClassScope())
 
     def report(self, messageClass, *args, **kwargs):
-        if messageClass not in (messages.FunctionCall, messages.FileImports, messages.MethodCall, messages.ClassDeclaration):
+        if messageClass not in messages.NewChecks:
             return
         self.messages.append(messageClass(self.filename, *args, **kwargs))
 
@@ -343,14 +339,15 @@ class Checker(object): #TODO: Fully for my own use!
     COMPREHENSION = EXCEPTHANDLER = KEYWORD = handleChildren
 
     def addBinding(self, lineno, value, reportRedef=True):
-        '''Called when a binding is altered.
+        """Called when a binding is altered.
 
         - `lineno` is the line of the statement responsible for the change
         - `value` is the optional new value, a Binding instance, associated
           with the binding; if None, the binding is deleted if it exists.
         - if `reportRedef` is True (default), rebinding while unused will be
           reported.
-        '''
+        """
+
         if (isinstance(self.scope.get(value.name), FunctionDefinition)
             and isinstance(value, FunctionDefinition)):
             self.report(messages.RedefinedFunction,
@@ -464,6 +461,7 @@ class Checker(object): #TODO: Fully for my own use!
                         pass
                     else:
                         self.report(messages.UndefinedName, node.lineno, node.id)
+
         elif isinstance(node.ctx, (_ast.Store, _ast.AugStore)):
             # if the name hasn't already been defined in the current scope
             if isinstance(self.scope, FunctionScope) and node.id not in self.scope:
@@ -549,11 +547,15 @@ class Checker(object): #TODO: Fully for my own use!
                 args.append(node.args.vararg)
             if node.args.kwarg:
                 args.append(node.args.kwarg)
+
             for name in args:
                 self.addBinding(node.lineno, Argument(name, node), reportRedef=False)
             if isinstance(node.body, list):
                 # case for FunctionDefs
                 for stmt in node.body:
+                    if isinstance(stmt, _ast.Return) and isinstance(stmt.value, _ast.Compare):
+                        self.report(messages.UnsafeComparison, node.lineno, node.body[0].value.left.id,
+                                    node.body[0].value.comparators[0].id)
                     self.handleNode(stmt, node)
             else:
                 # case for Lambdas
@@ -610,6 +612,11 @@ class Checker(object): #TODO: Fully for my own use!
     def IMPORT(self, node):
         for alias in node.names:
             name = alias.asname or alias.name
+            if alias.asname:
+                _imported = u"{0} as {1}".format(alias.name, alias.asname)
+            else:
+                _imported = alias.name
+            self.report(messages.FileImports, node.lineno, _imported)
             importation = Importation(name, node)
             self.addBinding(node.lineno, importation)
 
@@ -627,6 +634,12 @@ class Checker(object): #TODO: Fully for my own use!
                 self.report(messages.ImportStarUsed, node.lineno, node.module)
                 continue
             name = alias.asname or alias.name
+            if alias.asname:
+                _imported = u"{0} as {1} from {2}".format(alias.name, alias.asname, node.module)
+            else:
+                _imported = u"{0} from {1}".format(alias.name, node.module)
+            self.report(messages.FileImports, node.lineno, _imported)
+
             importation = Importation(name, node)
             if node.module == '__future__':
                 importation.used = (self.scope, node.lineno)

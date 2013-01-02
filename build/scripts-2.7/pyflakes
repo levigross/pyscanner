@@ -1,4 +1,4 @@
-#!/Users/human/PythonEnv/SearchEnv/bin/python
+#!/usr/bin/env python
 
 from pyflakes.scripts.pyflakes import main
 main()

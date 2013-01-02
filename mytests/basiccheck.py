@@ -1,7 +1,7 @@
 import ast
 import _ast
 
-test_file = open('mytests/main.py', 'r').read()
+test_file = open('main.py', 'r').read()
 
 for n in ast.parse(test_file).body:
     if isinstance(n , _ast.Import):

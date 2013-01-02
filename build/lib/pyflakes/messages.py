@@ -29,7 +29,7 @@ class MethodCall(Message):
 
 
 class FileImports(Message):
-    message = "Imports %r"
+    message = "Imports %s"
 
     def __init__(self, filename, lineno, name):
         Message.__init__(self, filename, lineno)
@@ -126,7 +126,7 @@ class LateFutureImport(Message):
 
 class UnusedVariable(Message):
     """
-    Indicates that a variable has been explicity assigned to but not actually
+    Indicates that a variable has been explicitly assigned to but not actually
     used.
     """
 
@@ -135,3 +135,19 @@ class UnusedVariable(Message):
     def __init__(self, filename, lineno, names):
         Message.__init__(self, filename, lineno)
         self.message_args = (names,)
+
+
+class UnsafeComparison(Message):
+    message = "%s and %s are compared in a linear fashion"
+
+    def __init__(self, filename, lineno, first_param, second_param):
+        Message.__init__(self, filename, lineno)
+        self.message_args = (first_param, second_param,)
+
+NewChecks = (
+    FunctionCall,
+    FileImports,
+    MethodCall,
+    ClassDeclaration,
+    UnsafeComparison,
+    )
